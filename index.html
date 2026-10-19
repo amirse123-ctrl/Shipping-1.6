@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b5cab">
+  <title>Pallet Gate 1.6</title>
+  <style>
+    :root{--blue:#0b5cab;--blue2:#e8f2fc;--green:#16803c;--red:#c62828;--amber:#9a6700;--bg:#f4f7fa;--card:#fff;--ink:#16202a;--muted:#65727e;--line:#d6dee6}
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+    header{position:sticky;top:0;z-index:5;background:var(--blue);color:white;padding:14px 16px;box-shadow:0 2px 10px #0002}
+    header h1{margin:0;font-size:21px} header small{opacity:.88}
+    main{max-width:1050px;margin:auto;padding:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px #0000000b}
+    h2{font-size:18px;margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    label{font-weight:700;font-size:14px;display:block}input,select,button,textarea{font:inherit}input,select{width:100%;margin-top:5px;padding:11px;border:1px solid #aeb9c4;border-radius:9px;background:white;direction:ltr;text-align:left}
+    input:focus,select:focus{outline:3px solid #b9dcff;border-color:var(--blue)}button{border:0;border-radius:9px;padding:11px 14px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e7edf3;color:#17212b}.danger{background:var(--red);color:#fff}.success{background:var(--green);color:#fff}.warn{background:#fff1c2;color:#6e4b00}
+    .step-banner{background:#e8f2fc;border:2px solid #0b5cab;border-radius:10px;padding:11px;margin:8px 0;font-weight:700;line-height:1.6}.next-hint{background:#fff3cd;border:1px solid #e0ad00;color:#654b00;border-radius:9px;padding:10px;margin-top:9px;font-weight:800}.done-hint{background:#dff4e5;border:1px solid #16803c;color:#0c622c;border-radius:9px;padding:10px;margin-top:9px;font-weight:800}.shipment-card{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px;background:#f9fbfd}.shipment-head{display:flex;justify-content:space-between;align-items:center}.shipment-list{margin-top:10px}.scanrow{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:end}.scanrow button{height:42px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat{background:var(--blue2);padding:12px;border-radius:11px;text-align:center}.stat b{display:block;font-size:25px}.status{padding:12px;border-radius:10px;font-weight:800;margin-top:12px}.pass{background:#dff4e5;color:#0c622c}.fail{background:#fde3e3;color:#9e1515}.info{background:#e8f2fc;color:#174f7a}.hidden{display:none!important}
+    #readerWrap{position:fixed;inset:0;background:#000d;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;color:white}#reader{width:min(94vw,650px);background:white;border-radius:12px;overflow:hidden}#readerControls{margin-top:10px;display:flex;gap:8px}
+    .tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th,td{border-bottom:1px solid var(--line);padding:8px;text-align:center;font-size:13px}th{background:#eef3f7;position:sticky;top:0}.pill{display:inline-block;padding:4px 8px;border-radius:99px;font-weight:800}.p-pass{background:#dff4e5;color:#0c622c}.p-fail{background:#fde3e3;color:#9e1515}
+    canvas{width:100%;height:170px;border:2px dashed #9aa9b5;border-radius:10px;background:white;touch-action:none}.checks{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}.checks label{display:flex;gap:6px;align-items:center}.checks input{width:auto;margin:0;transform:scale(1.25)}
+    .note{font-size:13px;color:var(--muted);line-height:1.5}.ltr{direction:ltr}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:30;padding:12px 18px;border-radius:10px;color:#fff;background:#22313f;box-shadow:0 4px 20px #0005;max-width:90%;text-align:center}
+    @media(max-width:700px){.grid,.grid4{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}main{padding:9px}.card{padding:11px}}
+    @media print{header,.no-print,#readerWrap{display:none!important}body{background:white}.card{box-shadow:none;break-inside:avoid}}
+  </style>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+<header><h1>Pallet Gate 1.6</h1><small>אימות LOCATION, DN, PLT ו־X OF Y לפני העמסה</small></header>
+<main>
+  <section class="card" id="truckCard">
+    <h2>1. פתיחת משאית</h2>
+    <div class="grid grid4">
+      <label>סוג משאית
+        <select id="truckType">
+          <option value="Morning truck">Morning truck</option>
+          <option value="Noon truck">Noon truck</option>
+          <option value="Special truck">Special truck</option>
+        </select>
+      </label>
+      <label>מספר משאית
+        <select id="truckNumber">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+          <option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+        </select>
+      </label>
+      <label>מספר סוגר<input id="seal" autocomplete="off"></label>
+      <label>שם הבודק<input id="inspector" value="Amir Segev" autocomplete="name"></label>
+    </div>
+    <div class="actions no-print"><button class="primary" id="startBtn">פתח / עדכן משאית</button><button class="secondary" id="newTruckBtn">משאית חדשה</button></div>
+    <p class="note">שם המשאית נבנה מסוג המשאית ומהמספר, לדוגמה Morning truck 3. מספר הסוגר נשמר פעם אחת לכל המשאית.</p>
+  </section>
+
+  <section class="card">
+    <h2>2. אימות QR: תעודה תחילה, אחר כך מדבקות</h2>
+    <div class="step-banner" id="flowHint">שלב 1: סרוק את ה־QR שבתעודת המשלוח.</div>
+    <div class="scanrow"><label>שדה סריקה יחיד<input id="singleQrInput" placeholder="LOCATION=...|PLT=...|DN=..." autocomplete="off"></label><button class="primary no-print" id="continuousScanBtn" type="button">פתח מצלמה לסריקה רציפה</button></div>
+    <div class="actions no-print"><button class="secondary" id="acceptQrBtn" type="button">קלוט מהשדה</button><button class="secondary" id="finishLabelsBtn" type="button">סיים סריקת מדבקות</button><button class="danger" id="resetQrBtn" type="button">אפס השוואה</button></div>
+    <div id="documentQrBox" class="status info">תעודה: טרם נסרקה</div>
+    <div id="labelsQrBox" class="status info">מדבקות שנסרקו: 0</div>
+    <div id="qrResult" class="status info">ממתין לתעודה</div>
+    <input id="pLoc" type="hidden"><input id="pDn" type="hidden"><input id="pPlt" type="hidden"><input id="sLoc" type="hidden"><input id="sDn" type="hidden"><input id="sPlt" type="hidden"><input id="docPaste" type="hidden">
+    <div id="itemCount" class="hidden"></div><div id="currentItemTitle" class="hidden"></div><div id="scanNextHint" class="hidden"></div><div id="palletItems" class="hidden"></div><div id="docPreview" class="hidden"></div>
+    <div class="grid"><label>חלק נוכחי X<input id="ofIndex" type="number" min="1"></label><label>סה״כ חלקים Y<input id="ofTotal" type="number" min="1"></label><label>הערה<input id="remark"></label></div>
+    <div class="checks"><label><input id="palletOk" type="checkbox" checked> משטח תקין</label><label><input id="fumigated" type="checkbox" checked> משטח מחוטא</label></div>
+    <div id="gateStatus" class="status info">ממתין לוולידציה</div>
+    <div class="actions no-print"><button class="success" id="validateBtn">אמת ושמור משטח</button><button class="secondary" id="clearFormBtn">נקה טופס</button></div>
+  </section>
+  <section class="card">
+    <h2>3. מצב העמסה</h2>
+    <div class="stats"><div class="stat"><b id="countTotal">0</b>משטחים</div><div class="stat"><b id="countDn">0</b>DN ייחודיים</div><div class="stat"><b id="countRejected">0</b>לא תקינים</div><div class="stat"><b id="countBlocked">0</b>חסימות</div></div>
+    <div id="groupGate" class="status info">אין עדיין קבוצות DN לבדיקה</div>
+  </section>
+
+  <section class="card">
+    <h2>4. משטחים שנשמרו</h2>
+    <div class="tablewrap"><table><thead><tr><th>#</th><th>LOCATION</th><th>DN</th><th>PLT</th><th>חלק</th><th>תקין</th><th>מחוטא</th><th>זמן</th><th class="no-print">פעולה</th></tr></thead><tbody id="rows"></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2>5. חתימת בודק וסיום</h2>
+    <canvas id="signature" width="900" height="220"></canvas>
+    <div class="actions no-print"><button class="secondary" id="clearSigBtn">נקה חתימה</button><button class="primary" id="excelBtn">יצוא Excel</button><button class="primary" id="pdfBtn">הפק PDF</button><button class="success" id="finishBtn">סיום העמסה</button></div>
+    <p class="note">המידע נשמר אוטומטית במכשיר. PDF ו־Excel נוצרים רק לאחר מעבר Gate הסיום.</p>
+  </section>
+</main>
+
+<div id="readerWrap" class="hidden"><div id="reader"></div><div id="readerControls"><button class="danger" id="closeCameraBtn">סגור מצלמה</button></div></div>
+<div id="toast" class="toast hidden"></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const SESSION_KEY='palletGate_v14_session';
+let state={truckType:'Morning truck',truckNumber:'1',seal:'',inspector:'',records:[],blocked:0,signature:''};
+let scanner=null, scanTarget=null, drawing=false, sigDirty=false;
+let palletItems=[];
+let documentItems=[];
+let documentQr=null,labelQrs=[],qrFlowStage="document",qrValidationPassed=false,lastDecoded="",lastDecodedAt=0;
+const norm=v=>String(v??'').trim().toUpperCase().replace(/\s+/g,'');
+const cleanDn=v=>{const s=norm(v); const m=s.match(/(?:DN[:\-]?)?(\d{6,12})/); return m?m[1]:s.replace(/^DN[:\-]?/,'');};
+const cleanLoc=v=>{const s=norm(v); const m=s.match(/(?:LOC(?:ATION)?[:\-]?)?([A-Z]{1,5}\d{2,}[A-Z0-9]*)/); return m?m[1]:s.replace(/^LOC(?:ATION)?[:\-]?/,'');};
+function parseUnifiedQr(raw){
+ const text=String(raw||'').trim(), f={};
+ text.toUpperCase().split(/[|;\n]+/).forEach(p=>{let m=p.trim().match(/^(LOCATION|LOC|PLT|DN)\s*[:=]\s*(.+)$/);if(m)f[m[1]]=m[2].trim()});
+ const loc=cleanLoc(f.LOCATION||f.LOC||''),plt=norm(f.PLT||'').replace(/^PLT[:\-]?/,''),dn=cleanDn(f.DN||'');
+ return {raw:text,loc,plt,dn,valid:!!(loc&&plt&&dn),key:`${loc}|${plt}|${dn}`};
+}
+function resetQrFlow(){documentQr=null;labelQrs=[];qrFlowStage='document';qrValidationPassed=false;palletItems=[];documentItems=[];$('singleQrInput').value='';$('documentQrBox').className='status info';$('documentQrBox').textContent='תעודה: טרם נסרקה';$('labelsQrBox').className='status info';$('labelsQrBox').textContent='מדבקות שנסרקו: 0';$('qrResult').className='status info';$('qrResult').textContent='ממתין לתעודה';$('flowHint').textContent='שלב 1: סרוק את ה־QR שבתעודת המשלוח.';}
+function refreshQrComparison(){
+ if(!documentQr||!labelQrs.length){qrValidationPassed=false;return}
+ const matches=labelQrs.filter(x=>x.key===documentQr.key),bad=labelQrs.filter(x=>x.key!==documentQr.key);
+ qrValidationPassed=bad.length===0&&matches.length>0;
+ $('qrResult').className='status '+(qrValidationPassed?'pass':'fail');
+ $('qrResult').textContent=qrValidationPassed?`MATCH: ${matches.length} מדבקות תואמות לתעודה`:`MISMATCH: ${bad.length} מתוך ${labelQrs.length} מדבקות אינן תואמות`;
+}
+function processUnifiedQr(raw){
+ const q=parseUnifiedQr(raw);if(!q.valid){toast('QR לא מזוהה. הנתונים חייבים לכלול LOCATION או LOC וגם PLT ו-DN',true);return}
+ const now=Date.now();if(q.raw===lastDecoded&&now-lastDecodedAt<1800)return;lastDecoded=q.raw;lastDecodedAt=now;
+ if(qrFlowStage==='document'){
+  documentQr=q;documentItems=[{plt:q.plt,dn:q.dn}];$('sLoc').value=q.loc;$('sPlt').value=q.plt;$('sDn').value=q.dn;
+  $('documentQrBox').className='status pass';$('documentQrBox').textContent=`תעודה נקלטה: LOCATION=${q.loc} | PLT=${q.plt} | DN=${q.dn}`;
+  qrFlowStage='labels';$('flowHint').textContent='שלב 2: סרוק ברצף את כל מדבקות LOC / PLT / DN. המצלמה נשארת פתוחה.';toast('התעודה נקלטה. סרוק מדבקות ברצף');
+ }else{
+  if(labelQrs.some(x=>x.raw===q.raw)){toast('המדבקה כבר נסרקה',true);return}
+  labelQrs.push(q);palletItems=labelQrs.map(x=>({plt:x.plt,dn:x.dn}));$('pLoc').value=q.loc;$('pPlt').value=q.plt;$('pDn').value=q.dn;
+  $('labelsQrBox').textContent='מדבקות שנסרקו: '+labelQrs.length+'\n'+labelQrs.map((x,i)=>`${i+1}. ${x.loc} | ${x.plt} | ${x.dn}`).join(' • ');refreshQrComparison();navigator.vibrate?.(qrValidationPassed?70:[160,70,160]);
+ }
+ $('singleQrInput').value='';
+}
+function toast(msg,bad=false){const t=$('toast');t.textContent=msg;t.style.background=bad?'#a4161a':'#22313f';t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),2600)}
+function save(){state.signature=sigDirty?$('signature').toDataURL('image/png'):state.signature;localStorage.setItem(SESSION_KEY,JSON.stringify(state));}
+function load(){try{const v=JSON.parse(localStorage.getItem(SESSION_KEY));if(v)state={...state,...v};}catch(e){};['truckType','truckNumber','seal','inspector'].forEach(k=>$(k).value=state[k]||'');render();if(state.signature){const im=new Image();im.onload=()=>$('signature').getContext('2d').drawImage(im,0,0,$('signature').width,$('signature').height);im.src=state.signature}}
+function truckName(){return `${state.truckType} ${state.truckNumber}`;}
+function syncTruck(){state.truckType=$('truckType').value;state.truckNumber=$('truckNumber').value;state.seal=$('seal').value.trim();state.inspector=$('inspector').value.trim();if(!state.truckType||!state.truckNumber||!state.seal||!state.inspector){toast('חובה לבחור משאית ולמלא סוגר ושם בודק',true);return false}save();toast(`פרטי ${truckName()} נשמרו`);return true}
+function setGate(pass,msg){const el=$('gateStatus');el.className='status '+(pass?'pass':'fail');el.textContent=(pass?'PASS: ':'BLOCK: ')+msg}
+function renderPalletItems(){
+  $('itemCount').textContent=`${palletItems.length} מדבקות נשמרו`;
+  $('currentItemTitle').textContent=`מדבקת משלוח מספר ${palletItems.length+1}`;
+  const hint=$('scanNextHint');
+  if(palletItems.length){hint.className='done-hint';hint.innerHTML=`✓ מדבקה ${palletItems.length} נשמרה. <b>יש עוד מדבקה?</b> סרוק עכשיו DN ו־PLT נוספים. אם אין עוד, עבור לכפתור סריקת QR מהתעודה.`}
+  else{hint.className='next-hint';hint.textContent='לאחר סריקת DN ו־PLT לחץ על הכפתור. אם קיימת מדבקה נוספת, סרוק אותה באותם שדות.'}
+  $('palletItems').innerHTML=palletItems.map((it,i)=>`<div class="shipment-card"><div class="shipment-head"><b>מדבקה ${i+1} נשמרה</b><button class="danger no-print" type="button" onclick="removePalletItem(${i})">מחק</button></div><div class="ltr">PLT: <b>${esc(it.plt)}</b> | DN: <b>${esc(it.dn)}</b></div></div>`).join('');
+}
+function addPalletItem(){
+  const dn=cleanDn($('pDn').value),plt=norm($('pPlt').value).replace(/^PLT[:\-]?/,'');
+  if(!dn||!plt){toast('יש לסרוק או להזין גם DN וגם PLT',true);return false}
+  if(palletItems.some(x=>x.dn===dn&&x.plt===plt)){toast('הזוג DN + PLT כבר נוסף למשטח',true);return false}
+  palletItems.push({dn,plt});$('pDn').value='';$('pPlt').value='';renderPalletItems();$('pDn').focus();toast(`מדבקה ${palletItems.length} נשמרה. אם יש עוד, סרוק DN ו-PLT נוספים`);return true;
+}
+window.removePalletItem=i=>{palletItems.splice(i,1);renderPalletItems()};
+function clearForm(){resetQrFlow();['ofIndex','ofTotal','remark'].forEach(x=>$(x).value='');$('palletOk').checked=true;$('fumigated').checked=true;$('gateStatus').className='status info';$('gateStatus').textContent='ממתין לוולידציה'}
+function parseDocument(showMessage=true){
+  const raw=$('docPaste').value.trim(),preview=$('docPreview');
+  documentItems=[];
+  if(!raw){$('sLoc').value='';preview.className='status info';preview.textContent='ממתין לסריקת QR מתעודת המשלוח';return false}
+  const fields={};raw.trim().toUpperCase().split(/[|\n]+/).forEach(part=>{const pos=part.indexOf('=');if(pos>0)fields[part.slice(0,pos).trim()]=part.slice(pos+1).trim()});
+  const loc=cleanLoc(fields.LOC||fields.LOCATION||'');
+  const itemsRaw=fields.ITEMS||'';
+  documentItems=itemsRaw.split(';').map(x=>{const a=x.split(',');return {plt:norm(a[0]||''),dn:cleanDn(a[1]||'')}}).filter(x=>x.plt&&x.dn);
+  const of=(fields.OF||'').match(/^(\d+)\s*(?:\/|OF)\s*(\d+)$/i);
+  $('sLoc').value=loc;if(of){$('ofIndex').value=of[1];$('ofTotal').value=of[2]}
+  if(!loc||!documentItems.length||!of){preview.className='status fail';preview.textContent='QR לא תקין. נדרשים LOC, ITEMS ו־OF';if(showMessage)toast('QR תעודת המשלוח אינו תקין',true);return false}
+  preview.className='status pass';preview.innerHTML=`QR זוהה: LOCATION ${esc(loc)} | ${documentItems.length} משלוחים | ${of[1]} OF ${of[2]}<br>${documentItems.map((x,i)=>`${i+1}. PLT ${esc(x.plt)} | DN ${esc(x.dn)}`).join('<br>')}`;
+  if(showMessage)toast(`QR נקרא בהצלחה: ${documentItems.length} משלוחים`);return true;
+}
+function validateAndSave(){
+  if(!syncTruck())return;
+  parseDocument(false);
+  if(($('pDn').value.trim()||$('pPlt').value.trim())&&!addPalletItem())return;
+  const pLoc=cleanLoc($('pLoc').value),sLoc=cleanLoc($('sLoc').value),x=Number($('ofIndex').value),y=Number($('ofTotal').value),errors=[];
+  if(!pLoc||!sLoc)errors.push('חסר LOCATION');
+  if(pLoc&&sLoc&&pLoc!==sLoc)errors.push(`LOCATION אינו תואם: ${pLoc} ≠ ${sLoc}`);
+  if(!palletItems.length)errors.push('לא נסרקו מדבקות DN + PLT מהמשטח');
+  if(!documentItems.length)errors.push('לא נסרק QR תקין מתעודת המשלוח');
+  if(!Number.isInteger(x)||!Number.isInteger(y)||x<1||y<1||x>y)errors.push('X OF Y אינו תקין');
+  if(state.records.some(r=>r.location===pLoc))errors.push(`LOCATION ${pLoc} כבר נסרק`);
+  const key=z=>`${z.plt}|${z.dn}`;
+  const actual=new Set(palletItems.map(key)),expected=new Set(documentItems.map(key));
+  documentItems.filter(z=>!actual.has(key(z))).forEach(z=>errors.push(`חסר במשטח: PLT ${z.plt} | DN ${z.dn}`));
+  palletItems.filter(z=>!expected.has(key(z))).forEach(z=>errors.push(`לא מופיע בתעודה: PLT ${z.plt} | DN ${z.dn}`));
+  if(errors.length){state.blocked++;save();render();setGate(false,errors.join(' | '));navigator.vibrate?.([180,80,180]);return}
+  const items=palletItems.map(z=>({...z}));
+  const rec={id:crypto.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random(),location:pLoc,items,dn:items.map(z=>z.dn).join(';'),plt:items.map(z=>z.plt).join(';'),ofIndex:x,ofTotal:y,palletOk:$('palletOk').checked,fumigated:$('fumigated').checked,remark:$('remark').value.trim(),time:new Date().toISOString()};
+  state.records.push(rec);save();render();setGate(true,`${pLoc} | ${items.length} משלוחים תואמים | ${x} OF ${y}`);navigator.vibrate?.(80);setTimeout(clearForm,900)
+}
+function groupValidation(){const errors=[];const groups={};state.records.forEach(r=>{groups[r.dn]??={total:r.ofTotal,parts:new Set()};groups[r.dn].parts.add(r.ofIndex);if(groups[r.dn].total!==r.ofTotal)errors.push(`DN ${r.dn}: סה״כ חלקים לא אחיד`)});Object.entries(groups).forEach(([dn,g])=>{for(let i=1;i<=g.total;i++)if(!g.parts.has(i))errors.push(`DN ${dn}: חסר ${i} OF ${g.total}`)});return errors}
+function finishGate(){const e=[];if(!state.truckType||!state.truckNumber||!state.seal||!state.inspector)e.push('פרטי משאית חסרים');if(!state.records.length)e.push('לא נשמרו משטחים');state.records.filter(r=>!r.palletOk||!r.fumigated).forEach(r=>e.push(`${r.location}: משטח לא עבר בדיקת תקינות/חיטוי`));if(!sigDirty&&!state.signature)e.push('חסרה חתימת בודק');return e}
+function approveIncomplete(){const missing=groupValidation();if(!missing.length)return true;const summary={};state.records.forEach(r=>{summary[r.dn]??={scanned:new Set(),total:r.ofTotal};summary[r.dn].scanned.add(r.ofIndex)});const lines=Object.entries(summary).filter(([dn,g])=>g.scanned.size<g.total).map(([dn,g])=>`DN ${dn}: רק ${g.scanned.size} מתוך ${g.total} נסרקו`);return confirm(`יש חוסר בחלקי משלוח:\n\n${lines.join('\n')}\n\nהאם מאשר לסגור את המשאית?`)}
+function render(){
+ $('countTotal').textContent=state.records.length;$('countDn').textContent=new Set(state.records.flatMap(r=>(r.items||[{dn:r.dn}]).map(x=>x.dn))).size;$('countRejected').textContent=state.records.filter(r=>!r.palletOk||!r.fumigated).length;$('countBlocked').textContent=state.blocked||0;
+ const es=groupValidation(),g=$('groupGate');g.className='status '+(state.records.length?(es.length?'fail':'pass'):'info');g.textContent=!state.records.length?'אין עדיין קבוצות DN לבדיקה':es.length?es.join(' | '):'כל קבוצות X OF Y שנקלטו שלמות';
+ $('rows').innerHTML=state.records.map((r,i)=>{const items=r.items||[{plt:r.plt,dn:r.dn}];return `<tr><td>${i+1}</td><td>${esc(r.location)}</td><td>${items.map(x=>esc(x.dn)).join('<br>')}</td><td>${items.map(x=>esc(x.plt)).join('<br>')}</td><td>${r.ofIndex} OF ${r.ofTotal}</td><td><span class="pill ${r.palletOk?'p-pass':'p-fail'}">${r.palletOk?'כן':'לא'}</span></td><td><span class="pill ${r.fumigated?'p-pass':'p-fail'}">${r.fumigated?'כן':'לא'}</span></td><td>${new Date(r.time).toLocaleString('he-IL')}</td><td class="no-print"><button class="danger" onclick="removeRec('${r.id}')">מחק</button></td></tr>`}).join('')
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+window.removeRec=id=>{if(confirm('למחוק את הרשומה?')){state.records=state.records.filter(r=>r.id!==id);save();render()}}
+async function startScan(target){scanTarget=target;if(typeof Html5Qrcode==='undefined'){toast('ספריית הסריקה לא נטענה. בדוק חיבור אינטרנט.',true);return}$('readerWrap').classList.remove('hidden');scanner=new Html5Qrcode('reader');try{await scanner.start({facingMode:{exact:'environment'}},{fps:12,qrbox:{width:260,height:260},aspectRatio:1.777,experimentalFeatures:{useBarCodeDetectorIfSupported:true}},onScan,()=>{});}catch(e){try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}},onScan,()=>{});}catch(e2){toast('לא ניתן לפתוח מצלמה. יש להפעיל דרך HTTPS ולאשר הרשאת מצלמה.',true);closeCamera()}}
+}
+function onScan(text){processUnifiedQr(text)}
+async function closeCamera(){if(scanner){try{if(scanner.isScanning)await scanner.stop();await scanner.clear()}catch(e){}scanner=null}$('readerWrap').classList.add('hidden');$('reader').innerHTML=''}
+function excelExport(){const e=finishGate();if(e.length){toast('Gate סיום נכשל: '+e[0],true);return}if(!approveIncomplete())return;if(typeof XLSX==='undefined'){toast('ספריית Excel לא נטענה',true);return}const data=state.records.flatMap((r,i)=>(r.items||[{plt:r.plt,dn:r.dn}]).map((it,j)=>({'#':i+1,'Item':j+1,'Truck':truckName(),'Seal':state.seal,'Location':r.location,'DN':it.dn,'PLT':it.plt,'Part':`${r.ofIndex} OF ${r.ofTotal}`,'Pallet OK':r.palletOk?'YES':'NO','Fumigated':r.fumigated?'YES':'NO','Inspector':state.inspector,'Scan Time':new Date(r.time).toLocaleString('he-IL'),'Remark':r.remark})));const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Pallets');XLSX.writeFile(wb,`Pallet_Gate_${safe(truckName())}.xlsx`)}
+function pdfExport(){const e=finishGate();if(e.length){toast('Gate סיום נכשל: '+e[0],true);return}if(!approveIncomplete())return;if(!window.jspdf){toast('ספריית PDF לא נטענה',true);return}const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape'});doc.setFontSize(18);doc.text('PALLET VERIFICATION REPORT',14,16);doc.setFontSize(10);doc.text(`Truck: ${truckName()}    Seal: ${state.seal}    Inspector: ${state.inspector}`,14,24);doc.text(`Date: ${new Date().toLocaleString('en-GB')}    Total pallets: ${state.records.length}    Blocked scans: ${state.blocked||0}`,14,30);doc.autoTable({startY:36,head:[['#','LOCATION','DN','PLT','PART','PALLET OK','FUMIGATED','TIME']],body:state.records.map((r,i)=>{const items=r.items||[{plt:r.plt,dn:r.dn}];return [i+1,r.location,items.map(x=>x.dn).join('\n'),items.map(x=>x.plt).join('\n'),`${r.ofIndex} OF ${r.ofTotal}`,r.palletOk?'YES':'NO',r.fumigated?'YES':'NO',new Date(r.time).toLocaleString('en-GB')]}),styles:{fontSize:8}});const finalY=doc.lastAutoTable.finalY+6;if(state.signature){doc.text('Inspector signature:',14,finalY+5);doc.addImage(state.signature,'PNG',14,finalY+8,60,18)}doc.save(`Pallet_Gate_${safe(truckName())}.pdf`)}
+function safe(v){return String(v).replace(/[^A-Za-z0-9_-]/g,'_')}
+function setupSignature(){const c=$('signature'),ctx=c.getContext('2d');ctx.lineWidth=3;ctx.lineCap='round';ctx.strokeStyle='#111';const pos=e=>{const r=c.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return{x:(p.clientX-r.left)*c.width/r.width,y:(p.clientY-r.top)*c.height/r.height}};const down=e=>{e.preventDefault();drawing=true;sigDirty=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)};const move=e=>{if(!drawing)return;e.preventDefault();const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};const up=()=>{if(drawing){drawing=false;save()}};['mousedown','touchstart'].forEach(x=>c.addEventListener(x,down,{passive:false}));['mousemove','touchmove'].forEach(x=>c.addEventListener(x,move,{passive:false}));['mouseup','mouseleave','touchend'].forEach(x=>c.addEventListener(x,up))}
+$('startBtn').onclick=syncTruck;$('newTruckBtn').onclick=()=>{if(confirm('לפתוח משאית חדשה?')){localStorage.removeItem(SESSION_KEY);location.reload()}};
+$('continuousScanBtn').onclick=()=>startScan('continuousQR');$('acceptQrBtn').onclick=()=>processUnifiedQr($('singleQrInput').value);$('singleQrInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();processUnifiedQr(e.target.value)}});$('finishLabelsBtn').onclick=()=>{closeCamera();refreshQrComparison()};$('resetQrBtn').onclick=resetQrFlow;
+$('validateBtn').onclick=validateAndSave;$('clearFormBtn').onclick=clearForm;$('closeCameraBtn').onclick=closeCamera;$('excelBtn').onclick=excelExport;$('pdfBtn').onclick=pdfExport;
+$('finishBtn').onclick=()=>{const e=finishGate();if(e.length){alert(`BLOCK - לא ניתן לסיים:
+
+${e.join('\n')}`);return}if(!approveIncomplete())return;save();alert(`PASS - ההעמסה נסגרה באישור
+משאית: ${truckName()}
+משטחים: ${state.records.length}
+סוגר: ${state.seal}`)};
+$('clearSigBtn').onclick=()=>{const c=$('signature');c.getContext('2d').clearRect(0,0,c.width,c.height);state.signature='';sigDirty=false;save()};setupSignature();resetQrFlow();load();
+</script>
+</body></html>
